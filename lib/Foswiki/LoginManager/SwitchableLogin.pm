@@ -126,6 +126,8 @@ sub getUser {
         my $sessionUser = Foswiki::Sandbox::untaintUnchecked(
             $this->{_cgisession}->param('SUDOTOAUTHUSER') ||
             $this->{_cgisession}->param('AUTHUSER') );
+        my $realSessionUser = Foswiki::Sandbox::untaintUnchecked(
+            $this->{_cgisession}->param('AUTHUSER') );
 
         my $sudo = $session->{request}->param('sudouser');
         # "Authentication" as legitimate sudo request
@@ -133,7 +135,7 @@ sub getUser {
         my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $sessionUser;
 
         unless (defined $sudo &&
-            (Foswiki::Func::isAnAdmin($sessionUser) || Foswiki::Func::isAnAdmin($orig)) &&
+            ($realSessionUser eq $Foswiki::cfg{AdminUserLogin} || $orig eq $this->{_cgisession}->param('SUDOALLOW')) &&
             (!$sudo || $sudoauth eq $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth})
         ) {
             return $webserverUser;
@@ -150,6 +152,10 @@ sub getUser {
         else {
             $this->{_cgisession}->param('SUDOFROMAUTHUSER', $orig);
             $this->{_cgisession}->param('SUDOTOAUTHUSER', $sudo);
+            # It's hard to reliably check admin rights for the raw user ID
+            # this early in the session, so we whitelist them once they have
+            # managed to get here via the internal admin login feature.
+            $this->{_cgisession}->param('SUDOALLOW', $orig);
             $authUser = $sudo;
             Foswiki::Func::writeDebug("sudo: $sessionUser -> $authUser");
         }
