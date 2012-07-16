@@ -124,8 +124,7 @@ sub getUser {
         }
 
         my $sessionUser = Foswiki::Sandbox::untaintUnchecked(
-            $this->{_cgisession}->param('SUDOTOAUTHUSER') ||
-            $this->{_cgisession}->param('AUTHUSER') );
+            $this->{_cgisession}->param('SUDOTOAUTHUSER') );
         my $realSessionUser = Foswiki::Sandbox::untaintUnchecked(
             $this->{_cgisession}->param('AUTHUSER') );
 
@@ -138,7 +137,7 @@ sub getUser {
             ($realSessionUser eq $Foswiki::cfg{AdminUserLogin} || $orig eq $this->{_cgisession}->param('SUDOALLOW')) &&
             (!$sudo || $sudoauth eq $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth})
         ) {
-            return $webserverUser;
+            return $sessionUser || $webserverUser;
         }
         my $authUser;
 
@@ -147,7 +146,7 @@ sub getUser {
             $this->{_cgisession}->param('AUTHUSER', $orig);
             $this->{_cgisession}->clear(['SUDOFROMAUTHUSER', 'SUDOTOAUTHUSER']);
             $authUser = $orig;
-            Foswiki::Func::writeDebug("unsudo: $authUser <- $sessionUser");
+            Foswiki::Func::writeDebug("unsudo: $orig <- $realSessionUser");
         }
         else {
             $this->{_cgisession}->param('SUDOFROMAUTHUSER', $orig);
@@ -157,12 +156,14 @@ sub getUser {
             # managed to get here via the internal admin login feature.
             $this->{_cgisession}->param('SUDOALLOW', $orig);
             $authUser = $sudo;
-            Foswiki::Func::writeDebug("sudo: $sessionUser -> $authUser");
+            Foswiki::Func::writeDebug("sudo: $orig -> $sudo");
         }
         $session->{request}->delete('sudouser');
         $session->{request}->delete('sudoauth');
+        my $pretendUser = $authUser || $sessionUser || $webserverUser;
+        $this->{_cgisession}->param('AUTHUSER', $pretendUser);
         $this->{_cgisession}->flush;
-        return $authUser;
+        return $pretendUser;
     }
     return $webserverUser;
 }
