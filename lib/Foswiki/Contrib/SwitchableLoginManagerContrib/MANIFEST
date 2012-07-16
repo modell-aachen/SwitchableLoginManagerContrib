@@ -1,0 +1,5 @@
+!noci
+data/System/SwitchableLoginManagerContrib.txt 0644 Documentation page
+lib/Foswiki/Contrib/SwitchableLoginManagerContrib.pm 0644 Perl module
+lib/Foswiki/Contrib/SwitchableLoginManagerContrib/Config.spec 0444 Configuration
+lib/Foswiki/LoginManager/SwitchableLogin.pm 0644 Custom login manager

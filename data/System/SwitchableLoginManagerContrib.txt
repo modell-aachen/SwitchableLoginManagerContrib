@@ -1,0 +1,28 @@
+<!--
+One line description, required for extensions repository catalog.
+   * Set SHORTDESCRIPTION = %$SHORTDESCRIPTION%
+-->
+---+!! SwitchableLoginManagerContrib
+
+%SHORTDESCRIPTION%
+
+%TOC%
+
+---++ Installation
+%$INSTALL_INSTRUCTIONS%
+
+---++ Info
+
+Many thanks to [[http://modell-aachen.de/][Modell Aachen GmbH]] for sponsoring this work.
+
+|  Author: | %$AUTHOR% |
+|  Copyright &copy;: | 2012 Modell Aachen GmbH. All rights reserved. --> |
+|  License: | GPL ([[http://www.gnu.org/copyleft/gpl.html][GNU General Public License]]) |
+|  Dependencies: | %$DEPENDENCIES% |
+|  Version: | %$VERSION% |
+|  Change History: | <!-- versions below in reverse order -->&nbsp; |
+|  1.0.0 (16 Jul 2012): | Initial version |
+|  Home: | http://foswiki.org/Extensions/%TOPIC% |
+|  Support: | http://foswiki.org/Support/%TOPIC% |
+
+
