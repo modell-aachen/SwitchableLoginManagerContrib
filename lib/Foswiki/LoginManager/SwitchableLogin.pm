@@ -57,55 +57,107 @@ sub new {
 
 =begin TML
 
----++ ObjectMethod userLoggedIn()
+---++ ObjectMethod getUser()
 
-Initializes the logged in user. In this login manager, overwrite the logged in
-user with our own (determined from sudouser query param) for admins.
+Returns the user from the web server (if any)... but, more interestingly,
+overrides this with our sudo mechanism if applicable.
 
 =cut
 
-sub userLoggedIn {
-    my ($this, $authUser) = @_;
+sub getUser {
+    my $this = shift;
     my $session = $this->{session};
 
-    unless ($this->{_cgisession} &&
-        $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoEnabled} &&
-        $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth} ne 'changeme!'
-    ) {
-        return $this->SUPER::userLoggedIn($authUser);
-    }
+    my $webserverUser = $this->SUPER::getUser();
+    return $webserverUser if $ENV{NO_FOSWIKI_SESSION};
 
-    # We store our sudo target in an extra session variable so that we can be
-    # sure that it hasn't been overwritten by the regular login manager or
-    # anything else.
-    my $sessionUser = Foswiki::Sandbox::untaintUnchecked(
-        $this->{_cgisession}->param('SUDOTOAUTHUSER') ) || $authUser;
+    # SMELL: we need to copy some code from LoginManager here because we can't
+    # hook into the original code in the right place :(
 
-    my $sudo = $session->{request}->param('sudouser');
-    # "Authentication" as legitimate sudo request
-    my $sudoauth = $session->{request}->param('sudoauth');
-    my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $sessionUser;
-    if (defined $sudo && Foswiki::Func::isAnAdmin($orig) && (!$sudo || $sudoauth eq $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth})) {
+    if ( $Foswiki::cfg{UseClientSessions}
+        && !$session->inContext('command_line') )
+    {
+
+        $this->{_haveCookie} = $session->{request}->header('Cookie');
+        my $sessionDir = "$Foswiki::cfg{WorkingDir}/tmp";
+
+        # First, see if there is a cookied session, creating a new session
+        # if necessary.
+        if ( $Foswiki::cfg{Sessions}{MapIP2SID} ) {
+
+            # map the end user IP address to a session ID
+
+            my $sid = $this->_IP2SID();
+            if ($sid) {
+                $this->{_cgisession} =
+                  Foswiki::LoginManager::Session->new( undef, $sid,
+                    { Directory => $sessionDir } );
+            }
+            else {
+
+                # The IP address was not mapped; create a new session
+
+                $this->{_cgisession} =
+                  Foswiki::LoginManager::Session->new( undef, undef,
+                    { Directory => $sessionDir } );
+                $this->_IP2SID( $this->{_cgisession}->id() );
+            }
+        }
+        else {
+
+            # IP mapping is off; use the request cookie
+
+            $this->{_cgisession} =
+              Foswiki::LoginManager::Session->new( undef, $session->{request},
+                { Directory => $sessionDir } );
+        }
+
+        die Foswiki::LoginManager::Session->errstr()
+          unless $this->{_cgisession};
+
+
+        # It's sudo time! (maybe)
+        unless ($Foswiki::cfg{SwitchableLoginManagerContrib}{SudoEnabled} &&
+            $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth} ne 'changeme!'
+        ) {
+            return $webserverUser;
+        }
+
+        my $sessionUser = Foswiki::Sandbox::untaintUnchecked(
+            $this->{_cgisession}->param('AUTHUSER') );
+
+        my $sudo = $session->{request}->param('sudouser');
+        # "Authentication" as legitimate sudo request
+        my $sudoauth = $session->{request}->param('sudoauth');
+        my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $sessionUser;
+
+        unless (defined $sudo &&
+            (Foswiki::Func::isAnAdmin($sessionUser) || Foswiki::Func::isAnAdmin($orig)) &&
+            (!$sudo || $sudoauth eq $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth})
+        ) {
+            return $webserverUser;
+        }
+        my $authUser;
+
         # Un-sudo 'em
         if (!$sudo) {
             $this->{_cgisession}->param('AUTHUSER', $orig);
-            $this->{_cgisession}->clear(['SUDOFROMAUTHUSER', 'SUDOTOAUTHUSER']);
+            $this->{_cgisession}->clear('SUDOFROMAUTHUSER');
             $authUser = $orig;
             Foswiki::Func::writeDebug("unsudo: $authUser <- $sessionUser");
         }
         else {
             $this->{_cgisession}->param('SUDOFROMAUTHUSER', $orig);
-            $this->{_cgisession}->param('SUDOTOAUTHUSER', $sudo);
+            $this->{_cgisession}->param('AUTHUSER', $sudo);
             $authUser = $sudo;
             Foswiki::Func::writeDebug("sudo: $sessionUser -> $authUser");
         }
         $session->{request}->delete('sudouser');
         $session->{request}->delete('sudoauth');
         $this->{_cgisession}->flush;
-        $session->redirect($session->{request}->self_url);
+        return $authUser;
     }
-
-    return $this->SUPER::userLoggedIn($authUser);
+    return $webserverUser;
 }
 
 1;
