@@ -124,6 +124,7 @@ sub getUser {
         }
 
         my $sessionUser = Foswiki::Sandbox::untaintUnchecked(
+            $this->{_cgisession}->param('SUDOTOAUTHUSER') ||
             $this->{_cgisession}->param('AUTHUSER') );
 
         my $sudo = $session->{request}->param('sudouser');
@@ -142,13 +143,13 @@ sub getUser {
         # Un-sudo 'em
         if (!$sudo) {
             $this->{_cgisession}->param('AUTHUSER', $orig);
-            $this->{_cgisession}->clear('SUDOFROMAUTHUSER');
+            $this->{_cgisession}->clear(['SUDOFROMAUTHUSER', 'SUDOTOAUTHUSER']);
             $authUser = $orig;
             Foswiki::Func::writeDebug("unsudo: $authUser <- $sessionUser");
         }
         else {
             $this->{_cgisession}->param('SUDOFROMAUTHUSER', $orig);
-            $this->{_cgisession}->param('AUTHUSER', $sudo);
+            $this->{_cgisession}->param('SUDOTOAUTHUSER', $sudo);
             $authUser = $sudo;
             Foswiki::Func::writeDebug("sudo: $sessionUser -> $authUser");
         }
