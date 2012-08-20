@@ -131,7 +131,7 @@ sub getUser {
         my $sudo = $session->{request}->param('sudouser');
         # "Authentication" as legitimate sudo request
         my $sudoauth = $session->{request}->param('sudoauth');
-        my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $sessionUser;
+        my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $realSessionUser;
 
         unless (defined $sudo &&
             ($realSessionUser eq $Foswiki::cfg{AdminUserLogin} || $orig eq $this->{_cgisession}->param('SUDOALLOW')) &&
