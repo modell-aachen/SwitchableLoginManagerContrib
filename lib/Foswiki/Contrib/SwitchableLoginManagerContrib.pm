@@ -17,7 +17,7 @@ use warnings;
 
 our $VERSION = '$Rev$';
 
-our $RELEASE = '1.0.0';
+our $RELEASE = '1.0.1';
 
 our $SHORTDESCRIPTION = 'Alternative login manager that supports sudoing to arbitrary users';
 
