@@ -134,7 +134,7 @@ sub getUser {
         my $orig = $this->{_cgisession}->param('SUDOFROMAUTHUSER') || $realSessionUser;
 
         unless (defined $sudo &&
-            ($realSessionUser eq $Foswiki::cfg{AdminUserLogin} || $orig eq $this->{_cgisession}->param('SUDOALLOW')) &&
+            ($realSessionUser eq $Foswiki::cfg{AdminUserLogin} || defined($orig) && $orig eq $this->{_cgisession}->param('SUDOALLOW')) &&
             (!$sudo || $sudoauth eq $Foswiki::cfg{SwitchableLoginManagerContrib}{SudoAuth})
         ) {
             return $sessionUser || $webserverUser;
