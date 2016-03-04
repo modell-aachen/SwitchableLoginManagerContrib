@@ -32,6 +32,8 @@ use Foswiki::Sandbox ();
 
 our @ISA;
 
+use constant CGIDRIVER => 'driver:File;serializer:Storable';
+
 =begin TML
 
 ---++ ClassMethod new($session)
@@ -90,7 +92,7 @@ sub getUser {
             my $sid = $this->_IP2SID();
             if ($sid) {
                 $this->{_cgisession} =
-                  Foswiki::LoginManager::Session->new( undef, $sid,
+                  Foswiki::LoginManager::Session->new( CGIDRIVER, $sid,
                     { Directory => $sessionDir } );
             }
             else {
@@ -98,7 +100,7 @@ sub getUser {
                 # The IP address was not mapped; create a new session
 
                 $this->{_cgisession} =
-                  Foswiki::LoginManager::Session->new( undef, undef,
+                  Foswiki::LoginManager::Session->new( CGIDRIVER, undef,
                     { Directory => $sessionDir } );
                 $this->_IP2SID( $this->{_cgisession}->id() );
             }
@@ -107,9 +109,11 @@ sub getUser {
 
             # IP mapping is off; use the request cookie
 
-            $this->{_cgisession} =
-              Foswiki::LoginManager::Session->new( undef, $session->{request},
-                { Directory => $sessionDir } );
+            $this->{_cgisession} = Foswiki::LoginManager::Session->new(
+                CGIDRIVER,
+                $session->{request},
+                { Directory => $sessionDir }
+              );
         }
 
         die Foswiki::LoginManager::Session->errstr()
