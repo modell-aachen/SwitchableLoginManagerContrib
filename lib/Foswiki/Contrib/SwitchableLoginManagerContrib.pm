@@ -15,7 +15,7 @@ package Foswiki::Contrib::SwitchableLoginManagerContrib;
 use strict;
 use warnings;
 
-our $VERSION = '$Rev$';
+our $VERSION = '1.0';
 
 our $RELEASE = "1.0";
 
